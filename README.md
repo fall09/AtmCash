@@ -118,11 +118,13 @@ In maintenance, the operator enters the physically counted notes for each recycl
 
 ## 6. AI tool usage
 
-**Tool:** Claude (Anthropic) via Claude Code, used as a coding assistant throughout the assignment.
+**Tool:** Claude (Anthropic) via Claude Code.
 
-**What I used it for:** drafting the architecture proposal, generating the first version of most of the code (entities, services, controllers, EF migrations, tests, Dockerfile/compose, Postman collection) and this README.
+**Used for:** code generation, debugging and drafting this README. I ran every step myself (build, `dotnet test`, `docker compose up`, Swagger, Postman) and fixed issues based on the real output.
 
-**How I worked with it:** one small step at a time. For every step I ran the code myself on my machine (build, `dotnet ef migrations`, `dotnet test`, `docker compose up`, manual calls in Swagger, the Postman Collection Runner), checked the result against the assignment text, and sent the real output (errors, logs, JSON responses) back for fixes. I also set up the repository, handled Git, Docker and Postman, and decided the order and scope of the work given the time limit.
+**Issues found and fixed while testing:** duplicate member name (compile error); validation attribute placement causing a 500; missing `code` in error responses for some `Accept` headers; EF Core multiple-include warning (split queries); configurable quote TTL for manual testing; a wrong Postman assertion.
+
+**Verification:** 35/35 tests pass, the Postman scenario is green, and a fresh clone starts with `docker compose up --build` from an empty database.
 
 **What had to be corrected after running it:**
 
