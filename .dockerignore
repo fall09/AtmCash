@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/.vs/
+.git/
+.idea/
+AtmCash.Tests/
+*.md

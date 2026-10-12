@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: atmcash
+      POSTGRES_USER: atm
+      POSTGRES_PASSWORD: atm_pass
+    ports:
+      - "5433:5432"   # yerel geliştirme için; 5432 çakışmasın diye 5433
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atm -d atmcash"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=atmcash;Username=atm;Password=atm_pass"
+      # Varsayılan 60 sn (ödev). Elle test için: QUOTE_TTL_SECONDS=600 docker compose up --build
+      Withdrawal__QuoteTtlSeconds: "${QUOTE_TTL_SECONDS:-60}"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
