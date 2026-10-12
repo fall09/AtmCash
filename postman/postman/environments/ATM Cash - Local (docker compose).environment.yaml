@@ -1,6 +1,0 @@
-name: ATM Cash - Local (docker compose)
-values:
-  - key: baseUrl
-    value: 'http://localhost:8080'
-  - key: cardNumber
-    value: '4111111111111111'
