@@ -1,0 +1,23 @@
+$kind: http-request
+name: "A1 Quote 30 TRY (no exact match: LOWER 20 / UPPER 40)"
+url: "{{baseUrl}}/api/atms/{{atmId}}/withdrawals/quotes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cardNumber": "4000000000000002",
+      "currency": "TRY",
+      "amount": 30
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const j = pm.response.json();
+      pm.collectionVariables.set('altQuoteId', j.quoteId);
+      pm.test('Not exact, 2 options', () => { pm.expect(j.exactMatch).to.eql(false); pm.expect(j.options.length).to.eql(2); });
+    language: text/javascript
+order: 1000

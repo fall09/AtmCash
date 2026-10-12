@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/atms"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "{{atmName}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set('atmName', 'ATM-' + Date.now());
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const j = pm.response.json();
+      pm.collectionVariables.set('atmId', j.id);
+      pm.test('Status UNCONFIGURED', () => pm.expect(j.status).to.eql('UNCONFIGURED'));
+    language: text/javascript
+order: 2000

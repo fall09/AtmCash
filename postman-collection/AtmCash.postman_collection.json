@@ -336,7 +336,7 @@
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const j = pm.response.json();",
                   "pm.test('Dispensed 160', () => pm.expect(j.dispensedAmount).to.eql(160));",
-                  "pm.test('Not a replay', () => pm.expect(pm.response.headers.get('Idempotent-Replayed')).to.be.null);"
+                  "pm.test('Not a replay', () => pm.expect(pm.response.headers.has('Idempotent-Replayed')).to.eql(false));"
                 ]
               }
             }

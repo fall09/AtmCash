@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: 536a8937-c41a-4076-8bc7-6389aebbc9d4
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/ATM Cash Management: b2f1f61f-4887-4972-82cc-4fbd6a887dbe
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

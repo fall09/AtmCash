@@ -1,0 +1,9 @@
+$kind: collection
+description: End-to-end scenario. Run the 'Main scenario' folder in order (Collection Runner), against http://localhost:8080 (docker compose up).
+variables:
+  atmId: ""
+  atmName: ""
+  quoteId: ""
+  altQuoteId: ""
+  reconciliationId: ""
+  idempotencyKey: ""

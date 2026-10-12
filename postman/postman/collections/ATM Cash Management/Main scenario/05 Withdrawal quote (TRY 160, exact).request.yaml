@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/atms/{{atmId}}/withdrawals/quotes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cardNumber": "{{cardNumber}}",
+      "currency": "TRY",
+      "amount": 160
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const j = pm.response.json();
+      pm.collectionVariables.set('quoteId', j.quoteId);
+      pm.test('Exact match', () => pm.expect(j.exactMatch).to.eql(true));
+      pm.test('Min notes: 100x1 + 20x3 = 4 notes', () => pm.expect(j.options[0].totalNotes).to.eql(4));
+    language: text/javascript
+order: 6000

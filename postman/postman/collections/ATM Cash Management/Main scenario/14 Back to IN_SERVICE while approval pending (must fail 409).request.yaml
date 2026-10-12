@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/atms/{{atmId}}/transitions"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "target": "IN_SERVICE"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 409', () => pm.response.to.have.status(409));
+      pm.test('Error code', () => pm.expect(pm.response.json().code).to.eql('RECONCILIATION_PENDING_APPROVAL'));
+    language: text/javascript
+order: 15000

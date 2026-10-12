@@ -1,0 +1,39 @@
+$kind: http-request
+url: "{{baseUrl}}/api/atms/{{atmId}}/load"
+method: POST
+headers:
+  Content-Type: application/json
+  X-User: operator1
+body:
+  type: json
+  content: |-
+    {
+      "cassettes": [
+        {
+          "slot": 2,
+          "count": 50
+        },
+        {
+          "slot": 3,
+          "count": 50
+        },
+        {
+          "slot": 4,
+          "count": 50
+        },
+        {
+          "slot": 5,
+          "count": 20
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const j = pm.response.json();
+      pm.test('Status LOADED', () => pm.expect(j.status).to.eql('LOADED'));
+      const try_ = j.totals.find(t => t.currency === 'TRY');
+      pm.test('TRY total = 8500', () => pm.expect(try_.amount).to.eql(8500));
+    language: text/javascript
+order: 4000
