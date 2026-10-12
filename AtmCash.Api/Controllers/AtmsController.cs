@@ -35,6 +35,12 @@ public class AtmsController(AtmService atms) : ControllerBase
         [FromHeader(Name = "X-User")] string? user, CancellationToken ct) =>
         atms.LoadCashAsync(id, req, user, ct);
 
+    /// <summary>Kasetlerden nakit alır (UNLOAD hareketi yazar). Sadece MAINTENANCE durumunda izinli.</summary>
+    [HttpPost("{id:guid}/unload")]
+    public Task<AtmInventoryDto> Unload(Guid id, UnloadCashRequest req,
+        [FromHeader(Name = "X-User")] string? user, CancellationToken ct) =>
+        atms.UnloadCashAsync(id, req, user, ct);
+
     /// <summary>Durum geçişi: LOADED→IN_SERVICE, IN_SERVICE⇄MAINTENANCE. Geçersiz geçişler 409 döner.</summary>
     [HttpPost("{id:guid}/transitions")]
     public Task<AtmInventoryDto> Transition(Guid id, TransitionRequest req, CancellationToken ct) =>

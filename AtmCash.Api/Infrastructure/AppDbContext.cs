@@ -9,6 +9,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Cassette> Cassettes => Set<Cassette>();
     public DbSet<CassetteMovement> CassetteMovements => Set<CassetteMovement>();
     public DbSet<DepositHolding> DepositHoldings => Set<DepositHolding>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
+    public DbSet<Reconciliation> Reconciliations => Set<Reconciliation>();
     public DbSet<WithdrawalQuote> WithdrawalQuotes => Set<WithdrawalQuote>();
     public DbSet<QuoteLine> QuoteLines => Set<QuoteLine>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();

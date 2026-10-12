@@ -123,6 +123,43 @@ public class AtmService(AppDbContext db, TimeProvider clock)
         return ToInventory(atm);
     }
 
+    public async Task<AtmInventoryDto> UnloadCashAsync(Guid id, UnloadCashRequest req, string? user, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var atm = await db.LoadAtmForUpdateAsync(id, ct);
+        atm.EnsureState("unload cash", AtmStatus.Maintenance);
+        var availableBefore = LowCashAlerts.Snapshot(atm);
+
+        if (req.Cassettes.Count == 0)
+            throw Invalid("INVALID_UNLOAD", "At least one cassette must be unloaded.");
+        if (req.Cassettes.Select(c => c.Slot).Distinct().Count() != req.Cassettes.Count)
+            throw Invalid("INVALID_UNLOAD", "Each cassette slot may appear only once.");
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        foreach (var item in req.Cassettes)
+        {
+            var cassette = atm.Cassettes.SingleOrDefault(c => c.Slot == item.Slot && c.Type == CassetteType.Recycling)
+                           ?? throw Invalid("INVALID_UNLOAD", $"Slot {item.Slot} is not a recycling cassette.");
+            if (item.Count <= 0)
+                throw Invalid("INVALID_UNLOAD", "Unload count must be positive.");
+            if (item.Count > cassette.AvailableCount)
+                throw Invalid("CASSETTE_INSUFFICIENT_NOTES", $"Cassette {item.Slot} has only {cassette.AvailableCount} unreserved notes; cannot unload {item.Count}.");
+
+            cassette.Count -= item.Count;
+            db.CassetteMovements.Add(new CassetteMovement
+            {
+                Id = Guid.NewGuid(), AtmId = atm.Id, CassetteId = cassette.Id,
+                Type = MovementType.Unload, CountDelta = -item.Count, ReservedDelta = 0,
+                CreatedAt = now, CreatedBy = user,
+            });
+        }
+
+        LowCashAlerts.Record(db, atm, availableBefore, now);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return ToInventory(atm);
+    }
+
     public async Task<AtmInventoryDto> TransitionAsync(Guid id, AtmStatus target, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -144,6 +181,12 @@ public class AtmService(AppDbContext db, TimeProvider clock)
         if (target == AtmStatus.Maintenance && atm.Cassettes.Any(c => c.ReservedCount > 0))
             throw new DomainException("ATM_HAS_ACTIVE_RESERVATIONS",
                 "ATM has open withdrawal quotes; wait for them to be confirmed, cancelled or expired.",
+                StatusCodes.Status409Conflict);
+
+        if (atm.Status == AtmStatus.Maintenance && target == AtmStatus.InService &&
+            await db.Reconciliations.AnyAsync(r => r.AtmId == atm.Id && r.Status == ReconciliationStatus.AwaitingApproval, ct))
+            throw new DomainException("RECONCILIATION_PENDING_APPROVAL",
+                "A reconciliation with a large difference is awaiting approval by a second user; the ATM cannot return to service until it is approved.",
                 StatusCodes.Status409Conflict);
 
         atm.Status = target;

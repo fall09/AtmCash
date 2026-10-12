@@ -20,6 +20,7 @@ public sealed class ApiFixture : IAsyncLifetime
         await _pg.StartAsync();
         // Ortam değişkeni, Program.cs'in okuduğu yapılandırmayı güvenilir şekilde geçersiz kılar.
         Environment.SetEnvironmentVariable("ConnectionStrings__Default", _pg.GetConnectionString());
+        Environment.SetEnvironmentVariable("Outbox__PollSeconds", "1"); // testlerde outbox hızlı işlensin
         Factory = new WebApplicationFactory<Program>();
         Client = Factory.CreateClient();
     }

@@ -11,6 +11,8 @@ public record ConfigureCassettesRequest([Required] List<CassetteConfigItem> Cass
 public record LoadItem(int Slot, int Count);
 public record LoadCashRequest([Required] List<LoadItem> Cassettes);
 
+public record UnloadCashRequest([Required] List<LoadItem> Cassettes);
+
 public record TransitionRequest(AtmStatus Target);
 
 public record AtmDto(Guid Id, string Name, AtmStatus Status, DateTime CreatedAt);

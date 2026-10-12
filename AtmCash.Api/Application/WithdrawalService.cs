@@ -24,6 +24,7 @@ public class WithdrawalService(AppDbContext db, TimeProvider clock, CardHasher h
         var atm = await db.LoadAtmForUpdateAsync(atmId, ct);
         atm.EnsureState("withdraw", AtmStatus.InService);
         var now = clock.GetUtcNow().UtcDateTime;
+        var availableBefore = LowCashAlerts.Snapshot(atm);
 
         // 2) Kart kilidi: aynı kart iki ayrı ATM'de aynı anda limiti aşamasın (kilit sırası hep ATM -> kart).
         var lockKey = $"card:{cardHash}:{currency}";
@@ -75,6 +76,9 @@ public class WithdrawalService(AppDbContext db, TimeProvider clock, CardHasher h
             atm.Cassettes.Single(c => c.Id == cassetteId).ReservedCount += n;
             db.CassetteMovements.Add(Movement(atm.Id, cassetteId, MovementType.Reservation, 0, n, now, quote.Id));
         }
+
+        // Düşük nakit uyarısı, rezervasyonla AYNI transaction'da outbox'a yazılır (B10).
+        LowCashAlerts.Record(db, atm, availableBefore, now);
 
         db.WithdrawalQuotes.Add(quote);
         await db.SaveChangesAsync(ct);

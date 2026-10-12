@@ -171,6 +171,38 @@ namespace AtmCash.Api.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AtmCash.Api.Domain.ExchangeRate", b =>
+                {
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("RateToTry")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.HasKey("Currency");
+
+                    b.ToTable("ExchangeRates");
+
+                    b.HasData(
+                        new
+                        {
+                            Currency = "TRY",
+                            RateToTry = 1m
+                        },
+                        new
+                        {
+                            Currency = "USD",
+                            RateToTry = 42.00m
+                        },
+                        new
+                        {
+                            Currency = "EUR",
+                            RateToTry = 49.00m
+                        });
+                });
+
             modelBuilder.Entity("AtmCash.Api.Domain.IdempotencyRecord", b =>
                 {
                     b.Property<string>("Key")
@@ -223,6 +255,87 @@ namespace AtmCash.Api.Infrastructure.Migrations
                     b.HasIndex("QuoteId");
 
                     b.ToTable("QuoteLines");
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.Reconciliation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("AtmId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StartedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("TotalAbsoluteDifferenceTry")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AtmId", "Status");
+
+                    b.ToTable("Reconciliations");
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.ReconciliationLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CassetteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CountedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("Denomination")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ReconciliationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SystemCount")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ValueTry")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CassetteId");
+
+                    b.HasIndex("ReconciliationId");
+
+                    b.ToTable("ReconciliationLine");
                 });
 
             modelBuilder.Entity("AtmCash.Api.Domain.WithdrawalQuote", b =>
@@ -324,6 +437,30 @@ namespace AtmCash.Api.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("AtmCash.Api.Domain.Reconciliation", b =>
+                {
+                    b.HasOne("AtmCash.Api.Domain.Atm", null)
+                        .WithMany()
+                        .HasForeignKey("AtmId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.ReconciliationLine", b =>
+                {
+                    b.HasOne("AtmCash.Api.Domain.Cassette", null)
+                        .WithMany()
+                        .HasForeignKey("CassetteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AtmCash.Api.Domain.Reconciliation", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("ReconciliationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AtmCash.Api.Domain.WithdrawalQuote", b =>
                 {
                     b.HasOne("AtmCash.Api.Domain.Atm", null)
@@ -341,6 +478,11 @@ namespace AtmCash.Api.Infrastructure.Migrations
             modelBuilder.Entity("AtmCash.Api.Domain.Cassette", b =>
                 {
                     b.Navigation("Holdings");
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.Reconciliation", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("AtmCash.Api.Domain.WithdrawalQuote", b =>

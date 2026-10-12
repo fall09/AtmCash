@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
+        npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // Enum'lar API'de SNAKE_UPPER string olarak görünür (IN_SERVICE, MAINTENANCE ...).
 JsonStringEnumConverter EnumConverter() => new(JsonNamingPolicy.SnakeCaseUpper);
@@ -20,6 +21,11 @@ builder.Services.AddSingleton<CardHasher>();
 builder.Services.AddScoped<AtmService>();
 builder.Services.AddScoped<WithdrawalService>();
 builder.Services.AddScoped<DepositService>();
+builder.Services.AddScoped<LedgerService>();
+builder.Services.AddScoped<ReconciliationService>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<OutboxPublisher>();
+builder.Services.AddHostedService<OutboxPublisherService>();
 builder.Services.AddHostedService<QuoteExpiryService>();
 
 builder.Services.AddProblemDetails();

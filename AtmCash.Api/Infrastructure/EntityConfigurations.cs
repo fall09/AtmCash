@@ -94,3 +94,57 @@ public class DepositHoldingConfiguration : IEntityTypeConfiguration<DepositHoldi
         b.ToTable(t => t.HasCheckConstraint("CK_DepositHoldings_Count", "\"Count\" >= 0"));
     }
 }
+
+public class ExchangeRateConfiguration : IEntityTypeConfiguration<ExchangeRate>
+{
+    public void Configure(EntityTypeBuilder<ExchangeRate> b)
+    {
+        b.HasKey(x => x.Currency);
+        b.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
+        b.Property(x => x.RateToTry).HasPrecision(18, 6);
+        // Başlangıç kurları (seed). Gerçek hayatta bir kur servisi güncellerdi; ödev için sabit.
+        b.HasData(
+            new ExchangeRate { Currency = Currency.TRY, RateToTry = 1m },
+            new ExchangeRate { Currency = Currency.USD, RateToTry = 42.00m },
+            new ExchangeRate { Currency = Currency.EUR, RateToTry = 49.00m });
+    }
+}
+
+public class ReconciliationConfiguration : IEntityTypeConfiguration<Reconciliation>
+{
+    public void Configure(EntityTypeBuilder<Reconciliation> b)
+    {
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.StartedBy).HasMaxLength(100).IsRequired();
+        b.Property(x => x.ApprovedBy).HasMaxLength(100);
+        b.Property(x => x.TotalAbsoluteDifferenceTry).HasPrecision(18, 2);
+        b.HasMany(x => x.Lines).WithOne().HasForeignKey(l => l.ReconciliationId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<Atm>().WithMany().HasForeignKey(x => x.AtmId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.AtmId, x.Status });
+    }
+}
+
+public class ReconciliationLineConfiguration : IEntityTypeConfiguration<ReconciliationLine>
+{
+    public void Configure(EntityTypeBuilder<ReconciliationLine> b)
+    {
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
+        b.Property(x => x.ValueTry).HasPrecision(18, 2);
+        b.Ignore(x => x.Difference);
+        b.HasOne<Cassette>().WithMany().HasForeignKey(x => x.CassetteId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
+{
+    public void Configure(EntityTypeBuilder<OutboxMessage> b)
+    {
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Type).HasMaxLength(50).IsRequired();
+        b.Property(x => x.Payload).IsRequired();
+        b.HasIndex(x => new { x.SentAt, x.CreatedAt });
+        b.HasIndex(x => x.AtmId);
+    }
+}
