@@ -118,15 +118,20 @@ In maintenance, the operator enters the physically counted notes for each recycl
 
 ## 6. AI tool usage
 
-I used **Claude (Anthropic) via Claude Code** as a coding assistant for this assignment: to propose the architecture, generate the first version of most of the code (entities, services, controllers, migrations scaffolding, tests, Dockerfile/compose, Postman collection) and this README, working in small steps where I ran each step and pasted results (build errors, test output, Swagger responses) back for fixes.
+**Tool:** Claude (Anthropic) via Claude Code, used as a coding assistant throughout the assignment.
 
-What I verified and what had to be corrected after running it:
+**What I used it for:** drafting the architecture proposal, generating the first version of most of the code (entities, services, controllers, EF migrations, tests, Dockerfile/compose, Postman collection) and this README.
+
+**How I worked with it:** one small step at a time. For every step I ran the code myself on my machine (build, `dotnet ef migrations`, `dotnet test`, `docker compose up`, manual calls in Swagger, the Postman Collection Runner), checked the result against the assignment text, and sent the real output (errors, logs, JSON responses) back for fixes. I also set up the repository, handled Git, Docker and Postman, and decided the order and scope of the work given the time limit.
+
+**What had to be corrected after running it:**
 
 - Compile error from a duplicated `Name` member on the `Atm` entity – renamed.
-- `[property: Required]` on record parameters caused a 500 (`InvalidOperationException` in validation metadata) – attributes moved to parameter target.
+- `[property: Required]` on record parameters caused a 500 (`InvalidOperationException` in validation metadata) – attributes moved to the parameter target.
 - Error responses lacked the `code` field when Swagger sent `Accept: text/plain`, because the built-in ProblemDetails service could not negotiate – replaced by a handler that writes `application/problem+json` directly.
 - EF Core warned about multiple collection includes – enabled split queries.
-- A 409 on confirm during manual testing was just the 60 s quote expiry – made the TTL configurable via environment variable (default still 60 s).
-- A Postman assertion expected `null` for a missing header; Postman returns `undefined` – fixed with `headers.has(...)`.
+- A 409 on confirm during manual testing was only the 60 s quote expiry – made the TTL configurable via an environment variable (default still 60 s).
+- A Postman assertion expected `null` for a missing header, Postman returns `undefined` – fixed with `headers.has(...)`.
+- The Postman app converted the first collection folder to its own format and deleted the JSON files – moved the export to `postman-collection/`.
 
-I ran all tests (35/35), the full Postman scenario (all assertions green) and `docker compose up` from a clean volume myself; the design choices above were checked against the assignment text.
+**Verification:** 35/35 tests pass locally, the full Postman scenario is green, and a fresh clone of this repository starts with `docker compose up --build` from an empty database.
