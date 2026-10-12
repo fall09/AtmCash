@@ -19,6 +19,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CardHasher>();
 builder.Services.AddScoped<AtmService>();
 builder.Services.AddScoped<WithdrawalService>();
+builder.Services.AddScoped<DepositService>();
 builder.Services.AddHostedService<QuoteExpiryService>();
 
 builder.Services.AddProblemDetails();

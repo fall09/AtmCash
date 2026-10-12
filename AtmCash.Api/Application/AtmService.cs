@@ -40,7 +40,7 @@ public class AtmService(AppDbContext db, TimeProvider clock)
 
     public async Task<AtmInventoryDto> GetInventoryAsync(Guid id, CancellationToken ct)
     {
-        var atm = await db.Atms.AsNoTracking().Include(a => a.Cassettes)
+        var atm = await db.Atms.AsNoTracking().Include(a => a.Cassettes).ThenInclude(c => c.Holdings)
                       .SingleOrDefaultAsync(a => a.Id == id, ct)
                   ?? throw AtmLocking.AtmNotFound(id);
         return ToInventory(atm);
@@ -158,23 +158,33 @@ public class AtmService(AppDbContext db, TimeProvider clock)
 
     private static AtmDto ToDto(Atm a) => new(a.Id, a.Name, a.Status, a.CreatedAt);
 
+    /// <summary>Notes/Totals fiziksel içeriktir: geri dönüşümlü kasetler + deposit kasetinin içindekiler.</summary>
     public static AtmInventoryDto ToInventory(Atm atm)
     {
         var cassettes = atm.Cassettes.OrderBy(c => c.Slot)
-            .Select(c => new CassetteDto(c.Slot, c.Type, c.Currency, c.Denomination, c.Capacity, c.Count, c.ReservedCount, c.AvailableCount))
+            .Select(c => new CassetteDto(c.Slot, c.Type, c.Currency, c.Denomination, c.Capacity, c.Count, c.ReservedCount, c.AvailableCount,
+                c.Type == CassetteType.Deposit
+                    ? c.Holdings.Where(h => h.Count > 0).OrderBy(h => h.Currency).ThenBy(h => h.Denomination)
+                        .Select(h => new DenominationTotalDto(h.Currency, h.Denomination, h.Count)).ToList()
+                    : null))
             .ToList();
 
-        var recycling = atm.Cassettes.Where(c => c.Type == CassetteType.Recycling && c.IsConfigured).ToList();
+        var physical = atm.Cassettes
+            .Where(c => c.Type == CassetteType.Recycling && c.IsConfigured)
+            .Select(c => (Currency: c.Currency!.Value, Denom: c.Denomination!.Value, Count: c.Count))
+            .Concat(atm.Cassettes.SelectMany(c => c.Holdings).Where(h => h.Count > 0)
+                .Select(h => (Currency: h.Currency, Denom: h.Denomination, Count: h.Count)))
+            .ToList();
 
-        var notes = recycling
-            .GroupBy(c => (c.Currency!.Value, c.Denomination!.Value))
-            .Select(g => new DenominationTotalDto(g.Key.Item1, g.Key.Item2, g.Sum(c => c.Count)))
+        var notes = physical
+            .GroupBy(x => (x.Currency, x.Denom))
+            .Select(g => new DenominationTotalDto(g.Key.Currency, g.Key.Denom, g.Sum(x => x.Count)))
             .OrderBy(n => n.Currency).ThenBy(n => n.Denomination)
             .ToList();
 
-        var totals = recycling
-            .GroupBy(c => c.Currency!.Value)
-            .Select(g => new CurrencyTotalDto(g.Key, g.Sum(c => (long)c.Count * c.Denomination!.Value)))
+        var totals = physical
+            .GroupBy(x => x.Currency)
+            .Select(g => new CurrencyTotalDto(g.Key, g.Sum(x => (long)x.Count * x.Denom)))
             .OrderBy(t => t.Currency)
             .ToList();
 

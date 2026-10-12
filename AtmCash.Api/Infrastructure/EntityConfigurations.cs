@@ -24,6 +24,7 @@ public class CassetteConfiguration : IEntityTypeConfiguration<Cassette>
         b.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
         b.Ignore(x => x.AvailableCount);
         b.Ignore(x => x.IsConfigured);
+        b.HasMany(x => x.Holdings).WithOne().HasForeignKey(h => h.CassetteId).OnDelete(DeleteBehavior.Cascade);
         b.HasIndex(x => new { x.AtmId, x.Slot }).IsUnique();
         // Son savunma hattı: uygulama hatalı olsa bile sayaçlar mantıksız değerlere gidemez (B6).
         b.ToTable(t => t.HasCheckConstraint(
@@ -38,6 +39,7 @@ public class CassetteMovementConfiguration : IEntityTypeConfiguration<CassetteMo
     {
         b.HasKey(x => x.Id);
         b.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
         b.Property(x => x.Reference).HasMaxLength(100);
         b.Property(x => x.CreatedBy).HasMaxLength(100);
         b.HasOne<Cassette>().WithMany().HasForeignKey(x => x.CassetteId).OnDelete(DeleteBehavior.Restrict);
@@ -79,5 +81,16 @@ public class IdempotencyRecordConfiguration : IEntityTypeConfiguration<Idempoten
         b.HasKey(x => x.Key);
         b.Property(x => x.Key).HasMaxLength(100);
         b.Property(x => x.Option).HasConversion<string>().HasMaxLength(10);
+    }
+}
+
+public class DepositHoldingConfiguration : IEntityTypeConfiguration<DepositHolding>
+{
+    public void Configure(EntityTypeBuilder<DepositHolding> b)
+    {
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Currency).HasConversion<string>().HasMaxLength(3);
+        b.HasIndex(x => new { x.CassetteId, x.Currency, x.Denomination }).IsUnique();
+        b.ToTable(t => t.HasCheckConstraint("CK_DepositHoldings_Count", "\"Count\" >= 0"));
     }
 }

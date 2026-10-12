@@ -13,7 +13,7 @@ public static class AtmLocking
     public static async Task<Atm> LoadAtmForUpdateAsync(this AppDbContext db, Guid id, CancellationToken ct)
     {
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Atms\" WHERE \"Id\" = {id} FOR UPDATE", ct);
-        return await db.Atms.Include(a => a.Cassettes).SingleOrDefaultAsync(a => a.Id == id, ct)
+        return await db.Atms.Include(a => a.Cassettes).ThenInclude(c => c.Holdings).SingleOrDefaultAsync(a => a.Id == id, ct)
                ?? throw AtmNotFound(id);
     }
 

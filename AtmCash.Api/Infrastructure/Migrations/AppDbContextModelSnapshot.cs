@@ -112,6 +112,13 @@ namespace AtmCash.Api.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("Denomination")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Reference")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -131,6 +138,37 @@ namespace AtmCash.Api.Infrastructure.Migrations
                     b.HasIndex("CassetteId");
 
                     b.ToTable("CassetteMovements");
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.DepositHolding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CassetteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("Denomination")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CassetteId", "Currency", "Denomination")
+                        .IsUnique();
+
+                    b.ToTable("DepositHoldings", t =>
+                        {
+                            t.HasCheckConstraint("CK_DepositHoldings_Count", "\"Count\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("AtmCash.Api.Domain.IdempotencyRecord", b =>
@@ -262,6 +300,15 @@ namespace AtmCash.Api.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("AtmCash.Api.Domain.DepositHolding", b =>
+                {
+                    b.HasOne("AtmCash.Api.Domain.Cassette", null)
+                        .WithMany("Holdings")
+                        .HasForeignKey("CassetteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AtmCash.Api.Domain.QuoteLine", b =>
                 {
                     b.HasOne("AtmCash.Api.Domain.Cassette", null)
@@ -289,6 +336,11 @@ namespace AtmCash.Api.Infrastructure.Migrations
             modelBuilder.Entity("AtmCash.Api.Domain.Atm", b =>
                 {
                     b.Navigation("Cassettes");
+                });
+
+            modelBuilder.Entity("AtmCash.Api.Domain.Cassette", b =>
+                {
+                    b.Navigation("Holdings");
                 });
 
             modelBuilder.Entity("AtmCash.Api.Domain.WithdrawalQuote", b =>

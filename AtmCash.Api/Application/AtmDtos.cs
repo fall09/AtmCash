@@ -17,7 +17,8 @@ public record AtmDto(Guid Id, string Name, AtmStatus Status, DateTime CreatedAt)
 
 public record CassetteDto(
     int Slot, CassetteType Type, Currency? Currency, int? Denomination,
-    int Capacity, int Count, int ReservedCount, int AvailableCount);
+    int Capacity, int Count, int ReservedCount, int AvailableCount,
+    List<DenominationTotalDto>? Contents = null);
 
 public record DenominationTotalDto(Currency Currency, int Denomination, int Count);
 public record CurrencyTotalDto(Currency Currency, long Amount);

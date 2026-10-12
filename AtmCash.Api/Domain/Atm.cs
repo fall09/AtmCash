@@ -39,6 +39,8 @@ public class Cassette
     public int Count { get; set; }
     /// <summary>Açık quote'lar için ayrılmış not sayısı.</summary>
     public int ReservedCount { get; set; }
+    /// <summary>Sadece deposit kasetinde dolu: içindeki notların para birimi/nominal dağılımı.</summary>
+    public List<DepositHolding> Holdings { get; set; } = [];
 
     public int AvailableCount => Count - ReservedCount;
     public bool IsConfigured => Type == CassetteType.Deposit || (Currency is not null && Denomination is not null);
@@ -53,7 +55,20 @@ public class CassetteMovement
     public MovementType Type { get; init; }
     public int CountDelta { get; init; }
     public int ReservedDelta { get; init; }
+    /// <summary>Deposit kasetine yazılan hareketlerde hangi not türü olduğu (kaset bakiyesi nominal bazında da yeniden hesaplanabilsin).</summary>
+    public Currency? Currency { get; init; }
+    public int? Denomination { get; init; }
     public DateTime CreatedAt { get; init; }
     public string? Reference { get; init; }
     public string? CreatedBy { get; init; }
+}
+
+/// <summary>Deposit kasetinin içindeki notlar: (para birimi, nominal) başına adet.</summary>
+public class DepositHolding
+{
+    public Guid Id { get; set; }
+    public Guid CassetteId { get; set; }
+    public Currency Currency { get; set; }
+    public int Denomination { get; set; }
+    public int Count { get; set; }
 }
